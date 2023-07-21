@@ -1,0 +1,121 @@
+git clone https://prsvso.visualstudio.com/DefaultCollection/Mobile%20App/_git/
+cd <intoFolder>
+git checkout master
+git flow init
+git flow release start 1.5.0(change to release number by checking Octopus latest release candidate and increasing by 1. Ex: 1.4.0 becomes 1.5.0) only when prod version series is complete
+git flow release publish 1.5.0
+
+- check teamcity if the build has started. otherwise go to the project and dropdown to the build number next to project name and select the branch No. and manually start the build by clicking run
+- Octopus should have the new release candidate ready.
+
+******Production release ****
+After octopus deploy to production
+go to repo and release branch
+
+git pull
+git checkout develop
+git pull
+git checkout master
+git pull
+
+$ git flow release finish 1.5.0
+
+when VI editor opens then after the comments add the line
+Promoted to production under <CRQ000020043726>
+
+Then esc :wq!
+
+Another VI opens enter the release number <1.5.0> after the comments
+Then esc :wq!
+
+
+Then another VI opens for develop with the release number <1.5.0>
+Dont do anything as it already will have the release number
+Then esc :wq!
+
+in develop branch--
+git push
+
+then in master or main branch
+git checkout <main>
+git push
+
+git push origin --tags
+
+Check Repo for Develop and <master> branch should have new release and release branch should be deleted.
+
+
+*********************************************************************************************************
+
+-- to setup long path filenames in git bash where developers use more than 32 chars. Run git bash as administrator
+ git config --system core.longpaths true
+ 
+-- if not admin acess then use this
+ git clone -c core.longpaths=true https://prsvso.visualstudio.com/DefaultCollection/SearchWorks/_git/SearchWorksAPI
+git clone -c core.longpaths=true https://prsvso.visualstudio.com/DefaultCollection/IAM/_git/Infrastructure
+git clone -c core.longpaths=true https://prsvso.visualstudio.com/DefaultCollection/IAM/_git/EntityManager
+git clone -c core.longpaths=true https://prsvso.visualstudio.com/DefaultCollection/PRSfM/_git/PRSfM_10
+git clone -c core.longpaths=true https://prsvso.visualstudio.com/DefaultCollection/SearchWorks/_git/SearchWorksAPI
+git clone -c core.longpaths=true https://prsvso.visualstudio.com/DefaultCollection/MuleSoft01/_git/CICDDeployPipeline
+git clone -c core.longpaths=true https://prsvso.visualstudio.com/DefaultCollection/MuleSoft01/_git/WorkDetailExclusionsPAPI
+git clone -c core.longpaths=true https://prsvso.visualstudio.com/DefaultCollection/MuleSoft01/_git/DigitalAppXAPI
+git clone -c core.longpaths=true https://prsvso.visualstudio.com/DefaultCollection/SearchWorks/_git/Infrastructure
+git clone -c core.longpaths=true https://prsvso.visualstudio.com/DefaultCollection/PRSfM/_git/PRSfM_10
+git clone -c core.longpaths=true https://prsvso.visualstudio.com/DefaultCollection/SetListHub/_git/SetListHub-Web
+-- change to 492?
+git flow release start 17.7.0
+git flow release publish 17.7.0
+
+
+*************incase you want to delete the release branch locally and remotely and change the branch with code from the default develop branch***********************
+--delete the release : release/17.7.0
+ git flow release delete -f 17.7.0
+
+--to delete remote branch
+git push origin --delete release/17.7.0
+
+--reinitialise git flow
+git flow init -f
+
+Which branch should be used for bringing forth production releases?
+   - develop
+   - master
+   - release-from-8388328b <adding this branch instead of develop>
+Branch name for production releases: [master] <master as usual>
+
+Which branch should be used for integration of the "next release"?
+   - develop
+   - release-from-8388328b
+Branch name for "next release" development: [develop] release-from-8388328b <type the new branch with code instead of develop>
+
+
+git flow release start 17.7.0
+git flow release publish 17.7.0
+
+then go to the project in team city and select the releasae and build it if the build is not yet started. 
+
+git flow release start 0.24.0
+git flow release publish 0.24.0
+
+
+
+------------------------------------------------
+ git flow feature start git-versioning
+ 
+ make the code changes and commit to feature 
+ 
+ git flow feature publish git-versioning
+ 
+git flow feature finish git-versioning
+---------------------------------------
+git flow feature start update-mule-configs
+ 
+--make the code changes and commit to feature 
+git add . or (filename)
+ 
+git flow feature publish update-mule-configs
+ 
+git flow feature finish update-mule-configs
+
+-----------------------------------------
+git flow release start 1.45.0
