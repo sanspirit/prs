@@ -1,0 +1,1 @@
+Add a smoke test which uploads a provider to the TF registry and then successfully does a `terraform init` which downloads that provider from the Terraform Registry.
