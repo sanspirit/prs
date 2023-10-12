@@ -1,1 +1,3 @@
 Add a smoke test which uploads a provider to the TF registry and then successfully does a `terraform init` which downloads that provider from the Terraform Registry.
+
+https://releases.hashicorp.com/terraform-provider-azurerm/3.75.0/terraform-provider-azurerm_3.75.0_windows_amd64.zip
