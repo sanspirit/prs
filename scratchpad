@@ -56,3 +56,73 @@ Describe "Terraform Registry API" {
     }
 }
 
+
+
+
+
+using System;
+using System.IO;
+using Microsoft.AspNetCore.Mvc;
+using Newtonsoft.Json;
+
+[Route("v1/providers")]
+public class ProviderController : Controller
+{
+    [HttpGet("{namespace}/{name}/{version}/download/{os}/{arch}")]
+    public IActionResult DownloadPackage(string @namespace, string name, string version, string os, string arch)
+    {
+        string filepath = $"providers/{@namespace}/{name}.json";
+        
+        if (!System.IO.File.Exists(filepath))
+        {
+            return NotFound();
+        }
+
+        string jsonContent = System.IO.File.ReadAllText(filepath);
+        var data = JsonConvert.DeserializeObject<ProviderData>(jsonContent);
+        
+        ProviderInfo provider = null;
+
+        foreach (var elem in data.Versions)
+        {
+            if (elem.Version == version)
+            {
+                foreach (var platform in elem.Platforms)
+                {
+                    if (platform.OS == os && platform.Arch == arch)
+                    {
+                        provider = platform;
+                        provider.Protocols = elem.Protocols;
+                    }
+                }
+            }
+        }
+
+        if (provider == null)
+        {
+            return NotFound();
+        }
+
+        return Json(provider);
+    }
+}
+
+public class ProviderData
+{
+    public List<ProviderVersion> Versions { get; set; }
+}
+
+public class ProviderVersion
+{
+    public string Version { get; set; }
+    public List<ProviderPlatform> Platforms { get; set; }
+    public List<string> Protocols { get; set; }
+}
+
+public class ProviderPlatform
+{
+    public string OS { get; set; }
+    public string Arch { get; set; }
+    // Add any other properties you need here
+}
+
