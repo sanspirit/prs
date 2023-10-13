@@ -1,3 +1,57 @@
 Add a smoke test which uploads a provider to the TF registry and then successfully does a `terraform init` which downloads that provider from the Terraform Registry.
 
 https://releases.hashicorp.com/terraform-provider-azurerm/3.75.0/terraform-provider-azurerm_3.75.0_windows_amd64.zip
+
+param (
+    [Parameter(Mandatory)]
+    [string] $StorageAccountName,
+    [Parameter(Mandatory)]
+    [string] $ContainerName,
+    [Parameter(Mandatory)]
+    [string] $TerraformRegistryFqdn
+)
+
+Describe "Terraform Registry API" {
+    It "'terraform init' should return an exit code of 0 (successful)" {
+        # Arrange
+
+        # 1. Zip the test module - it's important that we use GNU zip as this is what's
+        # used in the module release pipeline; we've seen funny behaviour from the Compress-Archive cmdlet
+        # zip terraform-provider-azurerm_3.75.0_windows_amd64.zip "test-provider/main.tf"
+        # Define the URL and the destination path
+        $url = "https://releases.hashicorp.com/terraform-provider-azurerm/3.75.0/terraform-provider-azurerm_3.75.0_windows_amd64.zip"
+        $destinationPath = Join-Path -Path $PSScriptRoot -ChildPath "test-provider\terraform-provider-azurerm_3.75.0_windows_amd64.zip"
+
+        # Create the destination directory if it doesn't exist
+        #$destinationDirectory = Split-Path $destinationPath
+        #New-Item -ItemType Directory -Force -Path $destinationDirectory
+
+        # Download the file
+        Invoke-WebRequest -Uri $url -OutFile $destinationPath
+
+        # 2. Upload the test module zip to the TF registry storage account
+        $context = New-AzStorageContext -StorageAccountName $StorageAccountName
+        $blobName = "v1/providers/royallondon/azurerm/3.75.0/download/windows/amd64/terraform-provider-azurerm_3.75.0_windows_amd64.zip"
+        Set-AzStorageBlobContent `
+            -Container $ContainerName `
+            -File "terraform-provider-azurerm_3.75.0_windows_amd64.zip" `
+            -Blob $blobName `
+            -Context $context `
+            -Force
+
+        # 3. Substitute placeholder token with TF registry URL in the consuming main.tf
+        $testHarnessMainFilePath = "test-provider/main.tf"
+        (Get-Content -Raw $testHarnessMainFilePath) -replace "TERRAFORM_REGISTRY_FQDN", $TerraformRegistryFqdn | Set-Content $testHarnessMainFilePath
+
+        # Act
+        terraform -chdir=test-provider init -input=false -backend=false
+        $terraformInitExitCode = $LASTEXITCODE
+
+        # Assert
+        $terraformInitExitCode | Should -Be 0 -Because "'terraform init' should succeed"
+
+        # Teardown
+        Remove-AzStorageBlob -Container $ContainerName -Blob $blobName -Context $context
+    }
+}
+
