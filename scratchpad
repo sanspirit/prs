@@ -126,3 +126,12 @@ public class ProviderPlatform
     // Add any other properties you need here
 }
 
+-------------------------------
+
+ [HttpGet("v1/Providers/{nameSpace}/{type}/versions")]
+ public ProviderVersionsJson GetVersionList(string nameSpace, string type)
+ {
+     Response.ContentType = "application/json";
+     return _providerService.GetVersionList($"v1/providers/{nameSpace}/{type}/");
+ }
+
