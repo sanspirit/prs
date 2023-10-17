@@ -134,4 +134,27 @@ public class ProviderPlatform
      Response.ContentType = "application/json";
      return _providerService.GetVersionList($"v1/providers/{nameSpace}/{type}/");
  }
+--------------------------------
 
+  public class ProviderVersion
+  {
+      public string version { get; set; }
+      public List<ProviderPlatform> Platforms { get; set; }
+      public List<string> Protocols { get; set; }
+  }
+
+  public class Provider
+  {
+      public IList<ProviderVersion> versions { get; set; }
+  }
+
+  public class ProviderVersionsJson
+  {
+      public IList<Provider> providers { get; set; }
+  }
+  public class ProviderPlatform
+  {
+      public string OS { get; set; }
+      public string Arch { get; set; }
+     
+  }
