@@ -136,25 +136,98 @@ public class ProviderPlatform
  }
 --------------------------------
 
-  public class ProviderVersion
-  {
-      public string version { get; set; }
-      public List<ProviderPlatform> Platforms { get; set; }
-      public List<string> Protocols { get; set; }
-  }
+namespace TerraformRegistry.Api.src.Models
+{
+    public class ProviderVersion
+    {
+        public string version { get; set; }
+        public List<ProviderPlatform> Platforms { get; set; }
+        public List<string> Protocols { get; set; }
+    }
 
-  public class Provider
-  {
-      public IList<ProviderVersion> versions { get; set; }
-  }
+    public class Provider
+    {
+        public IList<ProviderVersion> versions { get; set; }
+    }
 
-  public class ProviderVersionsJson
-  {
-      public IList<Provider> providers { get; set; }
-  }
-  public class ProviderPlatform
-  {
-      public string OS { get; set; }
-      public string Arch { get; set; }
-     
-  }
+    public class ProviderVersionsJson
+    {
+        public IList<Provider> providers { get; set; }
+    }
+    public class ProviderPlatform
+    {
+        public string OS { get; set; }
+        public string Arch { get; set; }
+       
+    }
+}
+
+------------
+
+public ProviderVersionsJson GetVersionList(string path)
+{
+    var versionPathList = _providerRepository.GetPathList(path);
+
+    var provider = new Provider();
+    provider.versions = new List<ProviderVersion>();
+    
+
+
+    foreach (var versionPath in versionPathList)
+    {
+        if (versionPath.EndsWith(".zip"))
+        {
+            var version = new ProviderVersion();
+            version.version = versionPath.Split("/")[4];
+            provider.versions.Add(version);
+         }
+       
+        /*commented
+        foreach (var elem in provider.versions)
+        {
+           // if (elem.Version == version)
+            //{
+                foreach (var platform in elem.Platforms)
+                {
+                    if (platform.OS == os && platform.Arch == arch)
+                    {
+                        provider = platform;
+                        provider.Protocols = elem.Protocols;
+                    }
+                }
+            }
+        }
+
+        */
+    }
+
+File paths:
+v1/providers/namespace/azurerm/3.75.0/windows/amd64/local.zip
+v1/providers/namespace/azurerm/3.75.0/freebsd/386/local.zip
+v1/providers/namespace/azurerm/3.75.0/linux/arm/local.zip
+v1/providers/namespace/azurerm/3.76.0/darwin/arm64/local.zip
+v1/providers/namespace/azurerm/3.76.0/windows/amd64/local.zip
+
+
+Jason Output:
+{
+  "versions": [
+    {
+      "version": "3.75.0",
+      "protocols": [null, null],
+      "platforms": [
+        {"os": "darwin", "arch": "amd64"},
+        {"os": "linux", "arch": "arm"},
+        {"os": "windows", "arch": "amd64"}
+      ]
+    },
+    {
+      "version": "3.76.0",
+      "protocols": [null],
+      "platforms": [
+        {"os": "darwin", "arch": "amd64"},
+       {"os": "windows", "arch": "amd64"}
+      ]
+    }
+  ]
+}
