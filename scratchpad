@@ -164,42 +164,56 @@ namespace TerraformRegistry.Api.src.Models
 
 ------------
 
-public ProviderVersionsJson GetVersionList(string path)
-{
-    var versionPathList = _providerRepository.GetPathList(path);
-
-    var provider = new Provider();
-    provider.versions = new List<ProviderVersion>();
-    
-
-
-    foreach (var versionPath in versionPathList)
-    {
-        if (versionPath.EndsWith(".zip"))
+        public ProviderVersionsJson GetVersionList(string path)
         {
-            var version = new ProviderVersion();
-            version.version = versionPath.Split("/")[4];
-            provider.versions.Add(version);
-         }
-       
-        /*commented
-        foreach (var elem in provider.versions)
-        {
-           // if (elem.Version == version)
-            //{
-                foreach (var platform in elem.Platforms)
+            var versionPathList = _providerRepository.GetPathList(path);
+
+            var provider = new Provider();
+            provider.versions = new List<ProviderVersion>();
+            HashSet<string> uniqueSet = new HashSet<string>();
+
+            foreach (var versionPath in versionPathList)
+            {
+                if (versionPath.EndsWith(".zip"))
                 {
-                    if (platform.OS == os && platform.Arch == arch)
+                    var version = new ProviderVersion();
+                    version.version = versionPath.Split("/")[4];
+                                      
+                    if (uniqueSet.Add(version.version))
                     {
-                        provider = platform;
-                        provider.Protocols = elem.Protocols;
+                       
+                        provider.versions.Add(version);
+                    }
+
+
+                }
+               
+                /* commented
+                foreach (var elem in provider.versions)
+                {
+                   // if (elem.Version == version)
+                    //{
+                        foreach (var platform in elem.Platforms)
+                        {
+                            if (platform.OS == os && platform.Arch == arch)
+                            {
+                                provider = platform;
+                                provider.Protocols = elem.Protocols;
+                            }
+                        }
                     }
                 }
-            }
-        }
 
-        */
-    }
+                */
+            }
+
+
+
+            var json = new ProviderVersionsJson();
+            json.providers = new List<Provider> { provider };
+
+            return json;
+        }
 
 File paths:
 v1/providers/namespace/azurerm/3.75.0/windows/amd64/local.zip
