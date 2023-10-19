@@ -245,3 +245,78 @@ Jason Output:
     }
   ]
 }
+
+
+namespace RoyalLondon.TerraformRegistry.Api.src.Models
+{
+    public class AzureStorageProviderRepository : IProviderRepository
+    {
+        private readonly BlobServiceClient _blobServiceClient;
+        private readonly IConfiguration _configuration;
+        private readonly MarkdownPipeline markdownPipeline;
+        private string ContainerName
+        {
+            get => _configuration["AZCONTAINER"] ?? throw new ConfigurationNotFoundException("AZCONTAINER");
+        }
+
+        public AzureStorageProviderRepository(BlobServiceClient blobServiceClient, IConfiguration configuration)
+        {
+            _blobServiceClient = blobServiceClient;
+            _configuration = configuration;
+            markdownPipeline = new MarkdownPipelineBuilder().UsePipeTables().UseAdvancedExtensions().Build();
+        }
+
+        //Returns a list of paths from a blob container that begin with the subPath
+        public List<string> GetPathList(string subPath)
+        {
+            List<string> pathList = new List<string>();
+            var paths = _blobServiceClient.GetBlobContainerClient(ContainerName).GetBlobs(BlobTraits.None, BlobStates.None, subPath);
+            foreach (var path in paths) //Coverting Pageable<BlobItem> to List<string>
+            {
+                pathList.Add(path.Name);
+            }
+
+            return pathList;
+        }
+
+        //Returns a uri with a SAS token to allow downloading from the blob container
+        public async Task<Uri> GetSasUriAsync()
+        {
+            var blobClient = _blobServiceClient.GetBlobContainerClient(ContainerName);
+            var userDelegationKey = await _blobServiceClient.GetUserDelegationKeyAsync(DateTimeOffset.UtcNow, DateTimeOffset.UtcNow.AddMinutes(5));
+            BlobSasBuilder sasBuilder = new BlobSasBuilder()
+            {
+                BlobContainerName = ContainerName,
+                Resource = "b", //resource is a blob
+                StartsOn = DateTimeOffset.UtcNow,
+                ExpiresOn = DateTimeOffset.UtcNow.AddMinutes(5),
+            };
+
+            sasBuilder.SetPermissions(BlobSasPermissions.Read);
+
+            BlobUriBuilder uriBuilder = new BlobUriBuilder(blobClient.Uri)
+            {
+                Sas = sasBuilder.ToSasQueryParameters(userDelegationKey, blobClient.GetParentBlobServiceClient().AccountName)
+            };
+
+            return uriBuilder.ToUri();
+        }
+
+        //Returns content from a readme file and converts it from markdown to html
+        public string GetReadMeContent(string filepath)
+        {
+            var blobClient = _blobServiceClient.GetBlobContainerClient(ContainerName).GetBlobClient(filepath);
+            var data = "<p style='color: red;'>No readme file found for this version.</p>";//html to be displayed if no readme file found
+            try
+            {
+                data = Markdown.ToHtml(blobClient.DownloadContent().Value.Content.ToString(), markdownPipeline);
+            }
+            catch (RequestFailedException rfe)
+            {
+                Console.Error.WriteLine($"{filepath} - {rfe.Message}");
+                data = $"{filepath} - {rfe.Message}";
+            }
+            return data;
+        }
+    }
+}
