@@ -1,3 +1,71 @@
+namespace RoyalLondon.TerraformRegistry.Api.src.Models
+{
+    public class ProviderPackageJson
+    {
+        public IList<Package> packages { get; set; }
+    }
+
+    public class Package
+    {
+        public IList<ProviderPackage> packageversions { get; set; }
+    }
+    public class ProviderPackage
+    {
+        public List<string> Protocols { get; set; }
+        public string Os { get; set; }
+        public string Arch { get; set; }
+        public string Filename { get; set; }
+        public string DownloadUrl { get; set; }
+        public string ShasumsUrl { get; set; }
+        public string ShasumsSignatureUrl { get; set; }
+        public string Shasum { get; set; }
+        public SigningKeys SigningKeys { get; set; }
+    }
+
+    public class SigningKeys
+    {
+        public List<GpgPublicKey> GpgPublicKeys { get; set; }
+    }
+
+    public class GpgPublicKey
+    {
+        public string KeyId { get; set; }
+        public string AsciiArmor { get; set; }
+        public string TrustSignature { get; set; }
+        public string Source { get; set; }
+        public string SourceUrl { get; set; }
+    }
+}
+
+public ProviderPackageJson GetProviderPackage(string path)
+ {
+     var groupedpackageVersions = _providerRepository.GetPathList(path);
+     var json = new ProviderPackageJson
+     {
+         packages = new List<Package> { new Package {  } }
+     };
+
+     return json;
+ }
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 Add a smoke test which uploads a provider to the TF registry and then successfully does a `terraform init` which downloads that provider from the Terraform Registry.
 https://hugomartins.io/essays/2021/01/build-a-terraform-private-registry/
 
