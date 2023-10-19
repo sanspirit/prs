@@ -1,5 +1,148 @@
+using Azure.Storage.Blobs.Models;
+using Azure.Storage.Blobs;
+using Azure;
+using Markdig.Helpers;
+using RoyalLondon.TerraformRegistry.Api.src.Models;
+using System;
+using System.IO;
+
 namespace RoyalLondon.TerraformRegistry.Api.src.Models
 {
+    public class ProviderService
+    {
+        private readonly IProviderRepository _providerRepository;
+
+        public ProviderService(IProviderRepository providerRepository)
+        {
+            _providerRepository = providerRepository;
+        }
+
+        //Creates a JSON response listing all the versions of a specified provider
+        public ProviderVersionsJson GetVersionList(string path)
+        {
+
+            var versionPathList = _providerRepository.GetPathList(path);
+
+            var versionInfoList = versionPathList
+                .Where(path => path.EndsWith(".zip"))
+                .Select(path =>
+                {
+                    var parts = path.Split('/');
+                    return new VersionInfo
+                    {
+                        Version = parts[4],
+                        OS = parts[5],
+                        Arch = parts[6],
+                    };
+                })
+                .Distinct()
+                .ToList();
+
+            var groupedVersions = versionInfoList
+                .GroupBy(info => info.Version)
+                .Select(group => new ProviderVersion
+                {
+                    version = group.Key,
+                    protocols = _providerRepository.GetBlobMetadata(path),
+                    platforms = group.Select(info => new ProviderPlatform
+                    {
+                        os = info.OS,
+                        arch = info.Arch
+                    }).ToList()
+                })
+                .ToList();
+
+            var json = new ProviderVersionsJson
+            {
+                providers = new List<Provider> { new Provider { versions = groupedVersions } }
+            };
+
+            return json;
+        }
+
+                
+        public ProviderPackageJson GetProviderPackage(string path)
+        {
+            var groupedpackageVersions = _providerRepository.GetPathList(path);
+            var json = new ProviderPackageJson
+            {
+                packages = new List<Package> { new Package {  } }
+            };
+
+            return json;
+        }
+
+        public async Task<string> GetDownloadUriAsync(string path)
+        {
+            var sasUri = await _providerRepository.GetSasUriAsync();
+            var uriString = sasUri.ToString().Split("?");
+            uriString[0] += path + "?";
+            sasUri = new Uri(uriString[0] + uriString[1]); //Adds provider location to the sas uri
+
+            return sasUri.ToString();
+        }
+
+        //Creates a list of namespaces, modules, providers, or versions depending on user input from the GUI
+        public List<string> GetProviderData(string path)
+        {
+            var pathList = _providerRepository.GetPathList(path);
+            List<string> unique = new List<string>();
+            int start = path.Length;
+            foreach (var blob in pathList)
+            {
+                int total = blob.Length;
+                string stringBack = blob[start..total];
+                int end = stringBack.IndexOf('/');
+                if (end > 0)
+                {
+                    string word = stringBack[0..end];
+                    unique.Add(word);
+                }
+            }
+            return unique.Distinct().ToList();
+        }
+
+        public string GetReadMeContent(string filepath)
+        {
+            return _providerRepository.GetReadMeContent(filepath);
+        }
+    }
+}
+
+namespace RoyalLondon.TerraformRegistry.Api.src.Models
+{
+
+    public class ProviderVersion
+    {
+        public string version { get; set; }
+        public IDictionary<string, string> protocols { get; set; }
+        public List<ProviderPlatform> platforms { get; set; }
+    }
+
+    public class Provider
+    {
+        public IList<ProviderVersion> versions { get; set; }
+    }
+
+    public class ProviderVersionsJson
+    {
+        public IList<Provider> providers { get; set; }
+    }
+
+    public class ProviderPlatform
+    {
+        public string os { get; set; }
+        public string arch { get; set; }
+    }
+
+    public class VersionInfo
+    {
+        public string Version { get; set; }
+        public string OS { get; set; }
+        public string Arch { get; set; }
+    }
+
+
     public class ProviderPackageJson
     {
         public IList<Package> packages { get; set; }
@@ -37,16 +180,6 @@ namespace RoyalLondon.TerraformRegistry.Api.src.Models
     }
 }
 
-public ProviderPackageJson GetProviderPackage(string path)
- {
-     var groupedpackageVersions = _providerRepository.GetPathList(path);
-     var json = new ProviderPackageJson
-     {
-         packages = new List<Package> { new Package {  } }
-     };
-
-     return json;
- }
 
 
 
