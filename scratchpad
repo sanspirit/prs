@@ -363,3 +363,4 @@ public ProviderVersionsJson GetVersionList(string path)
     return json;
 }
 
+https://developer.hashicorp.com/terraform/internals/provider-registry-protocol#find-a-provider-package
