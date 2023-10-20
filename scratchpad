@@ -1,3 +1,13 @@
+public async Task<string> GetDownloadUriAsync(string path)
+{
+    var sasUri = await _providerRepository.GetSasUriAsync();
+    var uriString = sasUri.ToString().Split("?");
+    uriString[0] += path + "?";
+    sasUri = new Uri(uriString[0] + uriString[1]); //Adds provider location to the sas uri
+
+    return sasUri.ToString();
+}
+
 {
     "protocols": [
         "5.0"
