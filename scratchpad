@@ -1,4 +1,4 @@
-        public ProviderVersionsJson GetVersionList(string path)
+                public ProviderVersionsJson GetVersionList(string path)
         {
 
             var versionPathList = _providerRepository.GetPathList(path);
