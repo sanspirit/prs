@@ -1,4 +1,7 @@
-  [HttpGet("v1/providers/{nameSpace}/{type}/{version}/download/{os}/{arch}")]
+https://registry.terraform.io/v1/providers/hashicorp/azurerm/3.75.0/download/windows/amd64
+
+
+[HttpGet("v1/providers/{nameSpace}/{type}/{version}/download/{os}/{arch}")]
   public ProviderPackageJson FindProviderPackage(string nameSpace, string type, string version, string os, string arch)
   {
       Response.ContentType = "application/json";
