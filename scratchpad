@@ -1,4 +1,109 @@
- public ProviderPackageJson GetProviderPackage(string path)
+
+
+public ProviderPackageJson GetProviderPackage(string path)
+{
+    var pack = new Package();
+    pack.packageversions = new List<ProviderPackage>();
+
+    var parts = path.Split('/');
+    var registryUrl = GetDownloadUriAsync(path);
+    var uriString = registryUrl.Result.ToString().Split("?");
+    var packageinfo = new ProviderPackage();
+
+    packageinfo.Os = parts[6];
+    packageinfo.Arch = parts[7];
+    packageinfo.ProviderVersion = parts[5];
+    packageinfo.ProviderType = parts[4];
+    var blobPath = "v1/providers/" + parts[3] + "/";
+    List<string> blobPathList = new List<string>();
+    blobPathList = _providerRepository.GetPathList(blobPath);
+
+   var zipInfoList = blobPathList
+        .Where(path => path.EndsWith(".zip"))
+        .Select(path =>
+        {
+            var blobparts = path.Split('/');
+            return new ProviderPackageInfo
+            {
+                VersionType = blobparts[3],
+                Version = blobparts[4],
+                OS = blobparts[5],
+                Arch = blobparts[6],
+                Filename = blobparts[7],
+              
+            };
+        })
+        .Distinct()
+        .ToList();
+
+    var zipPackage = zipInfoList
+        .Where(providerpackageInfo =>
+            packageinfo.ProviderType == providerpackageInfo.VersionType &&
+            packageinfo.ProviderVersion == providerpackageInfo.Version &&
+            packageinfo.Os == providerpackageInfo.OS &&
+            packageinfo.Arch == providerpackageInfo.Arch)
+        .FirstOrDefault(); // Use FirstOrDefault to get the matching version info
+
+    if (zipPackage != null)
+    {
+        packageinfo.Filename = zipPackage.Filename;
+        packageinfo.DownloadUrl = uriString[0] + packageinfo.Filename;
+       //pack.packageversions.Add(packageinfo);
+    }
+    else
+    {
+        throw new FileNotFoundException("The requested package was not found.", path);
+    }
+
+    
+    
+    
+        List<string> ShasumsUrlPathList = new List<string>();
+    //ShasumsUrlPathList = _providerRepository.GetPathList(blobPath);
+    var sigInfoList = blobPathList
+     .Where(path => path.EndsWith(".sig"))
+     .Select(path =>
+     {
+         var blobparts = path.Split('/');
+         return new ProviderPackageInfo
+         {
+             VersionType = blobparts[3],
+             Version = blobparts[4],
+             OS = blobparts[5],
+             Arch = blobparts[6],
+             ShasumsSignatureUrl = blobparts[7]
+         
+         };
+     })
+     .Distinct()
+     .ToList();
+
+    var sigPackage = sigInfoList
+        .Where(providerpackageInfo =>
+            packageinfo.ProviderType == providerpackageInfo.VersionType &&
+            packageinfo.ProviderVersion == providerpackageInfo.Version &&
+            packageinfo.Os == providerpackageInfo.OS &&
+            packageinfo.Arch == providerpackageInfo.Arch);
+    //.FirstOrDefault(); // Use FirstOrDefault to get the matching version info
+
+    if (sigPackage != null)
+    {
+        packageinfo.ShasumsSignatureUrl = sigPackage.Where(ProviderPackageInfo.Equals);
+        packageinfo.ShasumsUrl = sigPackage.ShasumsUrl;
+
+        //pack.packageversions.Add(packageinfo);
+
+    }
+
+    pack.packageversions.Add(packageinfo);
+
+    var json = new ProviderPackageJson();
+    json.packages = new List<Package> { pack };
+
+    return json;
+}
+
+public ProviderPackageJson GetProviderPackage(string path)
  {
      var pack = new Package();
      pack.packageversions = new List<ProviderPackage>();
