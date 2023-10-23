@@ -1,4 +1,11 @@
-              public ProviderPackageJson GetProviderPackage(string path)
+  [HttpGet("v1/providers/{nameSpace}/{type}/{version}/download/{os}/{arch}")]
+  public ProviderPackageJson FindProviderPackage(string nameSpace, string type, string version, string os, string arch)
+  {
+      Response.ContentType = "application/json";
+      return _providerService.GetProviderPackage($"/v1/providers/{nameSpace}/{type}/{version}/{os}/{arch}/");
+  }
+
+public ProviderPackageJson GetProviderPackage(string path)
         {
                      
 
