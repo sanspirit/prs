@@ -32,7 +32,7 @@
              .ToList();
          var requiredPackageList = new List<string>();
          requiredPackageList = versionInfoList
-             .Where(packageinfo.Os in versionInfo.OS, packageinfo.Arch = versopmInfo.Arch)
+             .Where(packageinfo.Os in versionInfo.OS, packageinfo.Arch = versionInfo.Arch)
              .Select(path =>
          {
              
