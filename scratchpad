@@ -1,3 +1,64 @@
+     public ProviderPackageJson GetProviderPackage(string path)
+     {
+                  
+
+         var pack = new Package();
+         pack.packageversions = new List<ProviderPackage>();
+
+         var parts = path.Split('/');
+         var registryUrl = GetDownloadUriAsync(path);
+         var uriString = registryUrl.Result.ToString().Split("?");
+         var packageinfo = new ProviderPackage();
+
+         packageinfo.Os = parts[6];
+         packageinfo.Arch = parts[7];
+         var blobPath = "v1/providers/" + parts[3] + "/" ;
+         List<string> blobPathList = new List<string>();
+         blobPathList = _providerRepository.GetPathList(blobPath);
+
+         var versionInfoList = blobPathList
+             .Where(path => path.EndsWith(".zip"))
+             .Select(path =>
+             {
+                 var blobparts = path.Split('/');
+                 return new VersionInfo
+                 {
+                     Version = blobparts[4],
+                     OS = blobparts[5],
+                     Arch = blobparts[6],
+                 };
+             })
+             .Distinct()
+             .ToList();
+         var requiredPackageList = new List<string>();
+         requiredPackageList = versionInfoList
+             .Where(packageinfo.Os in versionInfo.OS)
+             .Select(path =>
+         {
+             
+             {
+                 Version = parts[4],
+                 OS = parts[5],
+                 Arch = parts[6],
+             };
+         })
+             .Distinct()
+             .ToList();
+         
+
+
+         packageinfo.Filename = "terraform" + "-" + "provider" + "-" + parts[4] + "_" + parts[5] + "_" + packageinfo.Os + "_" + packageinfo.Arch +".zip";
+         packageinfo.DownloadUrl += uriString[0] + packageinfo.Filename;
+         pack.packageversions.Add(packageinfo);
+             
+
+         var json = new ProviderPackageJson();
+         json.packages = new List<Package> { pack };
+         
+         return json;
+         
+     }
+
 public async Task<string> GetDownloadUriAsync(string path)
 {
     var sasUri = await _providerRepository.GetSasUriAsync();
