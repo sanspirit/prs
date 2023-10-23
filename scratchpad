@@ -1,55 +1,70 @@
-         public class ProviderService
-    {
-        private readonly IProviderRepository _providerRepository;
-
-        public ProviderService(IProviderRepository providerRepository)
+              public ProviderPackageJson GetProviderPackage(string path)
         {
-            _providerRepository = providerRepository;
-        }
+                     
 
-        //Creates a JSON response listing all the versions of a specified provider
-        public ProviderVersionsJson GetVersionList(string path)
-        {
+            var pack = new Package();
+            pack.packageversions = new List<ProviderPackage>();
 
-            var versionPathList = _providerRepository.GetPathList(path);
+            var parts = path.Split('/');
+            var registryUrl = GetDownloadUriAsync(path);
+            var uriString = registryUrl.Result.ToString().Split("?");
+            var packageinfo = new ProviderPackage();
 
-            var versionInfoList = versionPathList
+            packageinfo.Os = parts[6];
+            packageinfo.Arch = parts[7];
+            packageinfo.ProviderVersion = parts[5];
+            packageinfo.ProviderType = parts[4];
+            var blobPath = "v1/providers/" + parts[3] + "/" ;
+            List<string> blobPathList = new List<string>();
+            blobPathList = _providerRepository.GetPathList(blobPath);
+
+            var versionInfoList = blobPathList
                 .Where(path => path.EndsWith(".zip"))
                 .Select(path =>
                 {
-                    var parts = path.Split('/');
+                    var blobparts = path.Split('/');
                     return new VersionInfo
                     {
-                        Version = parts[4],
-                        OS = parts[5],
-                        Arch = parts[6],
+                        VersionType = blobparts[3],
+                        Version = blobparts[4],
+                        OS = blobparts[5],
+                        Arch = blobparts[6],
+                        Filename = blobparts[7]
                     };
                 })
                 .Distinct()
                 .ToList();
+            var requiredPackageList = versionInfoList
+         .Where(versionInfo =>
+        packageinfo.ProviderType == versionInfo.VersionType &&
+        packageinfo.ProviderVersion == versionInfo.Version &&
+        packageinfo.Os == versionInfo.OS &&
+        packageinfo.Arch == versionInfo.Arch)
+    .Distinct()
+    .Select(versionInfo => new
+    {
+        VersionType = versionInfo.VersionType,
+        Version = versionInfo.Version,
+        OS = versionInfo.OS,
+        Arch = versionInfo.Arch,
+        FileName  = versionInfo.Filename
+    })
+    .Distinct()
+    .ToList();
 
-            var groupedVersions = versionInfoList
-                .GroupBy(info => info.Version)
-                .Select(group => new ProviderVersion
-                {
-                    version = group.Key,
-                    protocols = _providerRepository.GetBlobMetadata(path),
-                    platforms = group.Select(info => new ProviderPlatform
-                    {
-                        os = info.OS,
-                        arch = info.Arch
-                    }).ToList()
-                })
-                .ToList();
 
-            var json = new ProviderVersionsJson
-            {
-                providers = new List<Provider> { new Provider { versions = groupedVersions } }
-            };
+            packageinfo.Filename = requiredPackageList.FileName;
+            //packageinfo.Filename = "terraform" + "-" + "provider" + "-" + parts[4] + "_" + parts[5] + "_" + packageinfo.Os + "_" + packageinfo.Arch +".zip";
+            packageinfo.DownloadUrl += uriString[0] + packageinfo.Filename;
+            pack.packageversions.Add(packageinfo);
+                
 
+            var json = new ProviderPackageJson();
+            json.packages = new List<Package> { pack };
+            
             return json;
+            
         }
-
 
         public ProviderPackageJson GetProviderPackage(string path)
         {
