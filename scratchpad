@@ -1,4 +1,20 @@
+  var shasumInfoList = blobPathList
+      .Where(path => (!(path.EndsWith(".sig")) || !(path.EndsWith(".zip")))
+      .Select(path =>
+      {
+          var blobparts = path.Split('/');
+          return new ProviderPackageInfo
+          {
+              VersionType = blobparts[3],
+              Version = blobparts[4],
+              OS = blobparts[5],
+              Arch = blobparts[6],
+              Filename = blobparts[7],
 
+          };
+      })
+      .Distinct()
+      .ToList();
 
 public ProviderPackageJson GetProviderPackage(string path)
 {
