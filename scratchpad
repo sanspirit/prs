@@ -1,3 +1,10 @@
+output "private_endpoint_name" {
+  description = "The name of the Private Endpoint associated with this SQL Server instance."
+  value       = azurerm_private_endpoint.pe.name
+}
+
+pass to a data block (data source) to get the actual pe resource back so you can get the ip
+
 locals {
   sql_db_name = lower("${module.naming.standard["sql-database"]}-sql${local.hyphenated_name_suffix}")
 
