@@ -1,3 +1,5 @@
+dns_propagation_delay on the server module to 200
+
 output "private_endpoint_name" {
   description = "The name of the Private Endpoint associated with this SQL Server instance."
   value       = azurerm_private_endpoint.pe.name
