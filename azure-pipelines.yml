@@ -1,0 +1,36 @@
+resources: 
+  repositories:
+  - repository: module_templates
+    type: git
+    name: 'terraform-module-library/templates'
+    ref: refs/heads/main
+
+schedules:
+- cron: "0 0 * * *"
+  displayName: 'Nightly tests'
+  always: true
+  branches:
+    include:
+    - main
+
+trigger:
+  batch: false
+  branches:
+    include:
+    - main
+
+extends:
+  template: build-test-release.yml@module_templates
+  parameters:
+    moduleName: 'sql-database'
+    destinationProjectName: 'terraform-module-releases'
+    destinationRepoName: 'azure-mssql-database'
+    runTestsMaxParallel: 2
+    testConfiguration:
+    - terraform: 'latest'
+      tfvars:
+      - default
+      providers:
+      - azurerm:
+        key: 'azurerm'
+        version: '>= 3.8.0'
