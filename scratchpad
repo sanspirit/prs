@@ -1,3 +1,66 @@
+data "azurerm_monitor_action_group" "app_alert_actiongroup" {
+  count = var.action_group_name != null ? 1 : 0
+
+  name                = var.action_group_name
+  resource_group_name = var.action_group_resource_group_name 
+}
+
+resource "azurerm_monitor_metric_alert" "storage_high_80" {
+  count = var.action_group_name != null ? 1 : 0
+
+  name = "${azurerm_mssql_database.sql_database.name}-storage-80-alert"
+
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
+  scopes              = [azurerm_mssql_database.sql_database.id]
+  description         = "Action will be triggered when the storage is greater than 80%"
+  severity            = 1
+
+  criteria {
+    metric_namespace = "Microsoft.Sql/servers/databases"
+    metric_name      = "storage_percent"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = 80
+  }
+
+  action {
+    action_group_id = data.azurerm_monitor_action_group.app_alert_actiongroup[0].id
+  }
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
+resource "azurerm_monitor_metric_alert" "storage_high_95" {
+  count = var.action_group_name != null ? 1 : 0
+
+  name = "${azurerm_mssql_database.sql_database.name}-storage-95-alert"
+
+  resource_group_name = var.resource_group_name
+  tags                = var.tags
+  scopes              = [azurerm_mssql_database.sql_database.id]
+  description         = "Action will be triggered when the storage is greater than 95%"
+  severity            = 1
+
+  criteria {
+    metric_namespace = "Microsoft.Sql/servers/databases"
+    metric_name      = "storage_percent"
+    aggregation      = "Average"
+    operator         = "GreaterThan"
+    threshold        = 95
+  }
+
+  action {
+    action_group_id = data.azurerm_monitor_action_group.app_alert_actiongroup[0].id
+  }
+
+  lifecycle {
+    ignore_changes = [tags]
+  }
+}
+
 variable "organisation" {
   type        = string
   default     = "rlg"
